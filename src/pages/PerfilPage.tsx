@@ -1,11 +1,13 @@
-import { Plus, Save, Trash2, X } from 'lucide-react';
-import { useId, useState, type FormEvent, type ReactNode } from 'react';
-import {
-  CATALOGO_ESPECIALIDADES_OFICIAL_CARGADO,
-  ESPECIALIDADES_PROVISIONALES,
-  esCodigoEspecialidadValido,
-} from '../data/especialidades';
-import { PERFIL_POR_DEFECTO, validarPerfil } from '../lib/profile';
+import { Check, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { usePerfilCtx } from '../app/contexts';
+import { ESPECIALIDADES_PROVISIONALES, esCodigoEspecialidadValido } from '../data/especialidades';
+import { validarPerfil } from '../lib/profile';
+import { aFrase } from '../lib/texto';
+import { Fila, FilaCheck, FilaOpcion, Grupo, Interruptor, Segmentado } from '../ui/controles';
+import { PaginaGrande } from '../ui/PaginaGrande';
+import { Sheet } from '../ui/Sheet';
 import {
   DISTANCIAS_KM,
   ENTIDADES_CERTIFICADORAS,
@@ -14,251 +16,155 @@ import {
   PROVINCIAS,
   type EntidadCertificadora,
   type FiltroItCom,
-  type NivelIngles,
-  type NivelValenciano,
-  type PerfilErrores,
   type PerfilUsuario,
-  type Provincia,
   type SituacionBolsa,
   type Titulacion,
 } from '../types';
 
-interface Props {
-  perfil: PerfilUsuario;
-  almacenamientoDisponible: boolean;
-  onGuardar: (p: PerfilUsuario) => boolean;
-  onRestablecer: () => void;
-  onGuardado: () => void;
-}
-
-function Seccion({ titulo, descripcion, children }: { titulo: string; descripcion?: string; children: ReactNode }) {
-  return (
-    <section className="card space-y-4">
-      <div>
-        <h2 className="text-base font-bold">{titulo}</h2>
-        {descripcion && <p className="hint">{descripcion}</p>}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function Campo({ etiqueta, error, hint, children, htmlFor }: { etiqueta: string; error?: string; hint?: string; children: ReactNode; htmlFor: string }) {
-  return (
-    <div>
-      <label className="label" htmlFor={htmlFor}>{etiqueta}</label>
-      {children}
-      {hint && <p className="hint">{hint}</p>}
-      {error && <p className="error-text" role="alert">{error}</p>}
-    </div>
-  );
-}
-
-function Grupo({ leyenda, error, hint, children }: { leyenda: string; error?: string; hint?: string; children: ReactNode }) {
-  return (
-    <fieldset>
-      <legend className="label">{leyenda}</legend>
-      <div className="flex flex-wrap gap-x-5 gap-y-2">{children}</div>
-      {hint && <p className="hint">{hint}</p>}
-      {error && <p className="error-text" role="alert">{error}</p>}
-    </fieldset>
-  );
-}
-
-function Opcion({ tipo, nombre, etiqueta, marcado, onChange }: { tipo: 'radio' | 'checkbox'; nombre: string; etiqueta: string; marcado: boolean; onChange: () => void }) {
-  return (
-    <label className="flex cursor-pointer items-center gap-2 text-sm">
-      <input type={tipo} name={nombre} checked={marcado} onChange={onChange} className="h-4 w-4 accent-dccv-teal" />
-      {etiqueta}
-    </label>
-  );
-}
-
-const SITUACIONES: { valor: SituacionBolsa; etiqueta: string }[] = [
-  { valor: 'bolsa-especialidad', etiqueta: 'Pertenezco a la bolsa de la especialidad' },
-  { valor: 'otras-bolsas', etiqueta: 'Pertenezco a otras bolsas' },
-  { valor: 'ninguna', etiqueta: 'No pertenezco a ninguna bolsa' },
+const SITUACIONES: { valor: SituacionBolsa; titulo: string; texto: string }[] = [
+  { valor: 'bolsa-especialidad', titulo: 'Bolsa de la especialidad', texto: 'Estoy en la bolsa de la especialidad' },
+  { valor: 'otras-bolsas', titulo: 'Otras bolsas', texto: 'Estoy en bolsas de otras especialidades' },
+  { valor: 'ninguna', titulo: 'Ninguna bolsa', texto: 'Todavía no estoy en ninguna' },
 ];
-
 const TITULACIONES: { valor: Titulacion; etiqueta: string }[] = [
   { valor: 'grado', etiqueta: 'Grado' },
   { valor: 'diplomatura', etiqueta: 'Diplomatura' },
   { valor: 'otras', etiqueta: 'Otras titulaciones' },
 ];
+const nivel = (n: string) => (n === 'sin-acreditar' ? 'Sin acreditar' : n);
 
-const IT_COM: { valor: FiltroItCom; etiqueta: string }[] = [
-  { valor: 'todos', etiqueta: 'Todos' },
-  { valor: 'itinerante', etiqueta: 'Itinerante' },
-  { valor: 'compartido', etiqueta: 'Compartido' },
-  { valor: 'ninguno', etiqueta: 'Ninguno' },
-];
+const NOMBRE_CAMPO: Partial<Record<keyof PerfilUsuario, string>> = {
+  municipio: 'municipio', provincia: 'provincia', especialidades: 'especialidades', situacionBolsa: 'situación en bolsas', titulaciones: 'titulación',
+};
 
-const etiquetaNivel = (n: string) => (n === 'sin-acreditar' ? 'Sin acreditar' : n);
-
-export function PerfilPage({ perfil, almacenamientoDisponible, onGuardar, onRestablecer, onGuardado }: Props) {
-  const id = useId();
-  const [form, setForm] = useState<PerfilUsuario>(perfil);
-  const [errores, setErrores] = useState<PerfilErrores>({});
-  const [codigoManual, setCodigoManual] = useState('');
+/** Ajustes del perfil. Cada cambio se guarda al instante, como en los Ajustes de iOS. */
+export function PerfilPage() {
+  const { perfil, guardar, restablecer, completo } = usePerfilCtx();
+  const navigate = useNavigate();
+  const [codigo, setCodigo] = useState('');
   const [errorCodigo, setErrorCodigo] = useState('');
-  const [aviso, setAviso] = useState('');
+  const [borrando, setBorrando] = useState(false);
 
-  const set = <K extends keyof PerfilUsuario>(k: K, v: PerfilUsuario[K]) => setForm((f) => ({ ...f, [k]: v }));
+  const set = <K extends keyof PerfilUsuario>(k: K, v: PerfilUsuario[K]) => guardar({ ...perfil, [k]: v });
+  const errores = validarPerfil(perfil);
+  const faltan = (Object.keys(errores) as (keyof PerfilUsuario)[]).map((k) => NOMBRE_CAMPO[k]).filter(Boolean);
 
-  const alternarEspecialidad = (codigo: string) =>
-    set('especialidades', form.especialidades.includes(codigo) ? form.especialidades.filter((c) => c !== codigo) : [...form.especialidades, codigo]);
+  const alternarEsp = (c: string) => set('especialidades', perfil.especialidades.includes(c) ? perfil.especialidades.filter((x) => x !== c) : [...perfil.especialidades, c]);
+  const alternarTit = (t: Titulacion) => set('titulaciones', perfil.titulaciones.includes(t) ? perfil.titulaciones.filter((x) => x !== t) : [...perfil.titulaciones, t]);
+  const tp = perfil.tiposPuesto;
 
-  const alternarTitulacion = (t: Titulacion) =>
-    set('titulaciones', form.titulaciones.includes(t) ? form.titulaciones.filter((x) => x !== t) : [...form.titulaciones, t]);
-
-  const anadirCodigo = () => {
-    const c = codigoManual.trim();
-    if (!esCodigoEspecialidadValido(c)) {
-      setErrorCodigo('El código debe tener 3 dígitos (por ejemplo, 121).');
-      return;
-    }
+  const anadir = () => {
+    const c = codigo.trim();
+    if (!esCodigoEspecialidadValido(c)) return setErrorCodigo('El código tiene 3 dígitos, por ejemplo 121.');
     setErrorCodigo('');
-    if (!form.especialidades.includes(c)) set('especialidades', [...form.especialidades, c]);
-    setCodigoManual('');
+    if (!perfil.especialidades.includes(c)) set('especialidades', [...perfil.especialidades, c]);
+    setCodigo('');
   };
-
-  const enviar = (e: FormEvent) => {
-    e.preventDefault();
-    const errs = validarPerfil(form);
-    setErrores(errs);
-    if (Object.keys(errs).length > 0) {
-      setAviso('Revisa los campos marcados antes de guardar.');
-      return;
-    }
-    const ok = onGuardar(form);
-    if (ok) {
-      onGuardado();
-    } else {
-      setAviso('No se ha podido guardar en este navegador (almacenamiento bloqueado). El perfil solo se mantendrá mientras la página siga abierta.');
-    }
-  };
-
-  const nombresProvisionales = new Map(ESPECIALIDADES_PROVISIONALES.map((e) => [e.codigo, e.nombre]));
 
   return (
-    <form onSubmit={enviar} noValidate className="space-y-6" aria-labelledby={`${id}-t`}>
-      <div>
-        <h1 id={`${id}-t`} className="text-xl font-bold">Mi perfil docente</h1>
-        <p className="mt-1 text-sm text-muted">
-          Los datos se guardan únicamente en este dispositivo (localStorage). No se envían a ningún servidor.
-        </p>
-        {!almacenamientoDisponible && (
-          <p className="mt-2 rounded border border-dccv-yellow bg-dccv-yellow/20 p-2 text-sm" role="status">
-            Tu navegador no permite guardar datos locales: el perfil se perderá al cerrar la página.
-          </p>
-        )}
+    <PaginaGrande titulo="Mi perfil" subtitulo="Los cambios se guardan solos">
+      <div className={`mb-6 flex items-center gap-3 rounded-ios p-4 ${completo ? 'bg-dccv-teal/20' : 'bg-dccv-yellow/30'}`} role="status">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface">{completo ? <Check className="h-5 w-5 text-link" aria-hidden="true" /> : <span className="text-[17px] font-bold">!</span>}</span>
+        <p className="text-[15px]">{completo ? <><strong>Perfil completo.</strong> Ya puedes ver las plazas para ti.</> : <><strong>Casi listo.</strong> Falta indicar: {faltan.join(', ')}.</>}</p>
       </div>
 
-      <Seccion titulo="Ubicación" descripcion="La distancia se calculará por carretera cuando se implemente la geolocalización (Fase 6).">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Campo etiqueta="Municipio de residencia" htmlFor={`${id}-mun`} error={errores.municipio}>
-            <input id={`${id}-mun`} className="input" value={form.municipio} onChange={(e) => set('municipio', e.target.value)} autoComplete="address-level2" maxLength={80} />
-          </Campo>
-          <Campo etiqueta="Provincia" htmlFor={`${id}-prov`} error={errores.provincia}>
-            <select id={`${id}-prov`} className="input" value={form.provincia ?? ''} onChange={(e) => set('provincia', (e.target.value || null) as Provincia | null)}>
-              <option value="">Selecciona…</option>
-              {PROVINCIAS.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
-          </Campo>
-          <Campo etiqueta="Distancia máxima por carretera" htmlFor={`${id}-dist`}>
-            <select id={`${id}-dist`} className="input" value={form.distanciaMaxKm} onChange={(e) => set('distanciaMaxKm', Number(e.target.value) as PerfilUsuario['distanciaMaxKm'])}>
-              {DISTANCIAS_KM.map((d) => <option key={d} value={d}>{d} km</option>)}
-            </select>
-          </Campo>
+      <Grupo titulo="Dónde vives" pie="Para mostrarte primero las plazas más cercanas. La distancia por carretera llegará próximamente.">
+        <label className="row cursor-text">
+          <span>Municipio</span>
+          <input className="input-inline" value={perfil.municipio} onChange={(e) => set('municipio', e.target.value.slice(0, 80))} placeholder="Escríbelo" autoComplete="address-level2" aria-label="Municipio de residencia" />
+        </label>
+        <div className="px-4 py-3">
+          <Segmentado<string> etiqueta="Provincia" valor={perfil.provincia ?? ''} onCambio={(v) => set('provincia', v as PerfilUsuario['provincia'])} opciones={PROVINCIAS.map((p) => ({ valor: p, etiqueta: p }))} />
         </div>
-      </Seccion>
+        <label className="row">
+          <span>Distancia máxima</span>
+          <select className="input-inline cursor-pointer !flex-none" value={perfil.distanciaMaxKm} onChange={(e) => set('distanciaMaxKm', Number(e.target.value) as PerfilUsuario['distanciaMaxKm'])} aria-label="Distancia máxima por carretera">
+            {DISTANCIAS_KM.map((d) => <option key={d} value={d}>{d} km</option>)}
+          </select>
+        </label>
+      </Grupo>
 
-      <Seccion titulo="Especialidades" descripcion="Requisito de acceso: una plaza de una especialidad que no hayas seleccionado no se mostrará como compatible.">
-        {!CATALOGO_ESPECIALIDADES_OFICIAL_CARGADO && (
-          <p className="rounded border border-dccv-yellow bg-dccv-yellow/20 p-2 text-sm" role="status">
-            El catálogo oficial de especialidades aún no está cargado (Fase 2). Se ofrece una lista provisional y puedes
-            añadir cualquier código de 3 dígitos manualmente.
-          </p>
-        )}
-        <Grupo leyenda="Catálogo provisional" error={errores.especialidades}>
+      <section className="mb-7">
+        <h2 className="section-title">Tus especialidades</h2>
+        <div className="group-list">
           {ESPECIALIDADES_PROVISIONALES.map((e) => (
-            <Opcion key={e.codigo} tipo="checkbox" nombre="especialidad" etiqueta={`${e.codigo} · ${e.nombre}`} marcado={form.especialidades.includes(e.codigo)} onChange={() => alternarEspecialidad(e.codigo)} />
+            <FilaCheck key={e.codigo} etiqueta={<><span className="font-semibold">{e.codigo}</span> · {aFrase(e.nombre)}</>} marcada={perfil.especialidades.includes(e.codigo)} onClick={() => alternarEsp(e.codigo)} />
           ))}
-        </Grupo>
-        <div>
-          <label className="label" htmlFor={`${id}-cod`}>Añadir código de especialidad</label>
-          <div className="flex gap-2">
-            <input id={`${id}-cod`} className="input max-w-[10rem]" inputMode="numeric" maxLength={3} value={codigoManual} onChange={(e) => setCodigoManual(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); anadirCodigo(); } }} placeholder="p. ej. 121" />
-            <button type="button" className="btn-secondary" onClick={anadirCodigo}><Plus className="h-4 w-4" aria-hidden="true" />Añadir</button>
+          {perfil.especialidades.filter((c) => !ESPECIALIDADES_PROVISIONALES.some((e) => e.codigo === c)).map((c) => (
+            <FilaCheck key={c} etiqueta={<><span className="font-semibold">{c}</span> · Añadida por ti</>} marcada onClick={() => alternarEsp(c)} />
+          ))}
+          <div className="flex items-center gap-2 px-4 py-3">
+            <input className="input max-w-[11rem]" inputMode="numeric" maxLength={3} placeholder="Otro código" value={codigo} onChange={(e) => setCodigo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); anadir(); } }} aria-label="Añadir código de especialidad" />
+            <button type="button" className="btn-secondary !min-h-[44px] !rounded-xl !px-4 !text-[15px]" onClick={anadir}><Plus className="h-4 w-4" aria-hidden="true" />Añadir</button>
           </div>
-          {errorCodigo && <p className="error-text" role="alert">{errorCodigo}</p>}
         </div>
-        {form.especialidades.length > 0 && (
-          <ul className="flex flex-wrap gap-2" aria-label="Especialidades seleccionadas">
-            {form.especialidades.map((c) => (
-              <li key={c} className="flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-brand-ink">
-                {c}{nombresProvisionales.has(c) ? ` · ${nombresProvisionales.get(c)}` : ''}
-                <button type="button" onClick={() => alternarEspecialidad(c)} aria-label={`Quitar especialidad ${c}`} className="rounded-full p-0.5 hover:bg-surface/20"><X className="h-3 w-3" aria-hidden="true" /></button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Seccion>
+        {errorCodigo && <p className="error-text px-4" role="alert">{errorCodigo}</p>}
+        <p className="section-foot">Solo verás plazas de las especialidades que marques. La lista completa llegará con el catálogo oficial.</p>
+      </section>
 
-      <Seccion titulo="Situación administrativa y titulación" descripcion="Estos datos se usarán para comprobar requisitos obligatorios según los anexos de cada convocatoria (Fase 5).">
-        <Grupo leyenda="Situación en bolsas" error={errores.situacionBolsa}>
-          {SITUACIONES.map((s) => (
-            <Opcion key={s.valor} tipo="radio" nombre="situacionBolsa" etiqueta={s.etiqueta} marcado={form.situacionBolsa === s.valor} onChange={() => set('situacionBolsa', s.valor)} />
-          ))}
-        </Grupo>
-        <Grupo leyenda="Titulación" error={errores.titulaciones} hint="Clasificación general provisional. Las titulaciones y habilitaciones reconocidas para cada especialidad se incorporarán con el catálogo oficial.">
-          {TITULACIONES.map((t) => (
-            <Opcion key={t.valor} tipo="checkbox" nombre="titulacion" etiqueta={t.etiqueta} marcado={form.titulaciones.includes(t.valor)} onChange={() => alternarTitulacion(t.valor)} />
-          ))}
-        </Grupo>
-      </Seccion>
+      <Grupo titulo="Tu situación en bolsas">
+        {SITUACIONES.map((s) => <FilaOpcion key={s.valor} etiqueta={s.titulo} detalle={s.texto} marcada={perfil.situacionBolsa === s.valor} onClick={() => set('situacionBolsa', s.valor)} />)}
+      </Grupo>
 
-      <Seccion titulo="Acreditación lingüística" descripcion="Un certificado lingüístico no equivale automáticamente a una habilitación docente.">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Campo etiqueta="Valenciano" htmlFor={`${id}-val`}>
-            <select id={`${id}-val`} className="input" value={form.valenciano} onChange={(e) => set('valenciano', e.target.value as NivelValenciano)}>
-              {NIVELES_VALENCIANO.map((n) => <option key={n} value={n}>{etiquetaNivel(n)}</option>)}
-            </select>
-          </Campo>
-          <Campo etiqueta="Inglés" htmlFor={`${id}-ing`}>
-            <select id={`${id}-ing`} className="input" value={form.ingles} onChange={(e) => set('ingles', e.target.value as NivelIngles)}>
-              {NIVELES_INGLES.map((n) => <option key={n} value={n}>{etiquetaNivel(n)}</option>)}
-            </select>
-          </Campo>
-          <Campo etiqueta="Certificado de inglés" htmlFor={`${id}-cert`} error={errores.inglesCertificado}>
-            <select id={`${id}-cert`} className="input" value={form.inglesCertificado ?? ''} onChange={(e) => set('inglesCertificado', (e.target.value || null) as EntidadCertificadora | null)}>
-              <option value="">Ninguno</option>
-              {ENTIDADES_CERTIFICADORAS.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </Campo>
+      <Grupo titulo="Tu titulación">
+        {TITULACIONES.map((t) => (
+          <Fila key={t.valor} etiqueta={t.etiqueta}>
+            <Interruptor etiqueta={t.etiqueta} marcado={perfil.titulaciones.includes(t.valor)} onCambio={() => alternarTit(t.valor)} />
+          </Fila>
+        ))}
+      </Grupo>
+
+      <Grupo titulo="Idiomas" pie="Un certificado de idioma no equivale a una habilitación docente.">
+        <label className="row">
+          <span>Valenciano</span>
+          <select className="input-inline cursor-pointer !flex-none" value={perfil.valenciano} onChange={(e) => set('valenciano', e.target.value as PerfilUsuario['valenciano'])} aria-label="Nivel de valenciano">
+            {NIVELES_VALENCIANO.map((n) => <option key={n} value={n}>{nivel(n)}</option>)}
+          </select>
+        </label>
+        <label className="row">
+          <span>Inglés</span>
+          <select className="input-inline cursor-pointer !flex-none" value={perfil.ingles} onChange={(e) => set('ingles', e.target.value as PerfilUsuario['ingles'])} aria-label="Nivel de inglés">
+            {NIVELES_INGLES.map((n) => <option key={n} value={n}>{nivel(n)}</option>)}
+          </select>
+        </label>
+        <label className="row">
+          <span>Certificado de inglés</span>
+          <select className="input-inline cursor-pointer !flex-none" value={perfil.inglesCertificado ?? ''} onChange={(e) => set('inglesCertificado', (e.target.value || null) as EntidadCertificadora | null)} aria-label="Entidad del certificado de inglés">
+            <option value="">Ninguno</option>
+            {ENTIDADES_CERTIFICADORAS.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </label>
+      </Grupo>
+
+      <Grupo titulo="Qué plazas prefieres" pie="Son preferencias: las plazas que no las cumplan salen más abajo, pero no se ocultan.">
+        <Fila etiqueta="Vacantes"><Interruptor etiqueta="Vacantes" marcado={tp.vacante} onCambio={(v) => set('tiposPuesto', { ...tp, vacante: v })} /></Fila>
+        <Fila etiqueta="Sustituciones determinadas"><Interruptor etiqueta="Sustituciones determinadas" marcado={tp.sustitucionDeterminada} onCambio={(v) => set('tiposPuesto', { ...tp, sustitucionDeterminada: v })} /></Fila>
+        <Fila etiqueta="Sustituciones indeterminadas"><Interruptor etiqueta="Sustituciones indeterminadas" marcado={tp.sustitucionIndeterminada} onCambio={(v) => set('tiposPuesto', { ...tp, sustitucionIndeterminada: v })} /></Fila>
+        <div className="px-4 py-3">
+          <p className="mb-2 text-[15px]">Puestos itinerantes</p>
+          <Segmentado<FiltroItCom> etiqueta="Puestos itinerantes" valor={perfil.itCom} onCambio={(v) => set('itCom', v)} opciones={[{ valor: 'todos', etiqueta: 'Todos' }, { valor: 'itinerante', etiqueta: 'Sí' }, { valor: 'ninguno', etiqueta: 'No' }]} />
         </div>
-      </Seccion>
+      </Grupo>
 
-      <Seccion titulo="Preferencias laborales" descripcion="Son preferencias personales: ordenan y filtran resultados, pero no sustituyen a los requisitos obligatorios.">
-        <Grupo leyenda="Tipo de puesto" error={errores.tiposPuesto}>
-          <Opcion tipo="checkbox" nombre="tp" etiqueta="Vacantes" marcado={form.tiposPuesto.vacante} onChange={() => set('tiposPuesto', { ...form.tiposPuesto, vacante: !form.tiposPuesto.vacante })} />
-          <Opcion tipo="checkbox" nombre="tp" etiqueta="Sustituciones determinadas" marcado={form.tiposPuesto.sustitucionDeterminada} onChange={() => set('tiposPuesto', { ...form.tiposPuesto, sustitucionDeterminada: !form.tiposPuesto.sustitucionDeterminada })} />
-          <Opcion tipo="checkbox" nombre="tp" etiqueta="Sustituciones indeterminadas" marcado={form.tiposPuesto.sustitucionIndeterminada} onChange={() => set('tiposPuesto', { ...form.tiposPuesto, sustitucionIndeterminada: !form.tiposPuesto.sustitucionIndeterminada })} />
-        </Grupo>
-        <Grupo leyenda="IT/COM" hint="Se compararán los valores originales de la columna IT/COM de cada listado; su significado se tomará del diccionario validado con la documentación oficial.">
-          {IT_COM.map((o) => (
-            <Opcion key={o.valor} tipo="radio" nombre="itcom" etiqueta={o.etiqueta} marcado={form.itCom === o.valor} onChange={() => set('itCom', o.valor)} />
-          ))}
-        </Grupo>
-      </Seccion>
+      {completo && <button type="button" className="btn-primary mb-4 w-full" onClick={() => navigate('/')}>Ver mis plazas</button>}
 
-      <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center gap-3 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur">
-        <button type="submit" className="btn-primary"><Save className="h-4 w-4" aria-hidden="true" />Guardar perfil</button>
-        <button type="button" className="btn-secondary" onClick={() => { if (window.confirm('¿Borrar el perfil guardado en este dispositivo?')) { onRestablecer(); setForm(structuredClone(PERFIL_POR_DEFECTO)); setErrores({}); setAviso(''); } }}>
-          <Trash2 className="h-4 w-4" aria-hidden="true" />Borrar perfil
-        </button>
-        <p role="status" className="text-sm font-medium text-red-700">{aviso}</p>
-      </div>
-    </form>
+      <Grupo pie="Se borra solo de este dispositivo. DCCV no guarda tus datos en ningún servidor.">
+        <button type="button" className="row justify-center !text-red-600" onClick={() => setBorrando(true)}>Borrar mis datos</button>
+      </Grupo>
+
+      <Sheet
+        abierto={borrando}
+        onCerrar={() => setBorrando(false)}
+        titulo="¿Borrar tu perfil?"
+        pie={
+          <div className="grid gap-2.5">
+            <button type="button" className="btn-destructive !bg-red-600 !text-white" onClick={() => { restablecer(); setBorrando(false); }}>Sí, borrar</button>
+            <button type="button" className="btn-secondary" onClick={() => setBorrando(false)}>Cancelar</button>
+          </div>
+        }
+      >
+        <p className="pt-2 text-[15px] text-muted">Se eliminarán tus especialidades, ubicación y preferencias de este dispositivo. Tus plazas favoritas no se borran.</p>
+      </Sheet>
+    </PaginaGrande>
   );
 }

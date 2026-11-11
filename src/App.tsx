@@ -1,26 +1,17 @@
-import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
-import { useConvocatoriaCtx, usePerfilCtx } from './app/contexts';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { onboardingVisto } from './lib/onboarding';
 import { obtenerStorage } from './lib/profile';
 import { BienvenidaPage } from './pages/BienvenidaPage';
-import { InicioPage } from './pages/InicioPage';
+import { FavoritosPage } from './pages/FavoritosPage';
+import { MasPage } from './pages/MasPage';
 import { PerfilPage } from './pages/PerfilPage';
-import { FavoritosPage, HistoricoPage } from './pages/Pendientes';
+import { PlazasPage } from './pages/PlazasPage';
 
 function Inicio() {
-  const { perfil, completo } = usePerfilCtx();
-  const convocatoria = useConvocatoriaCtx();
-  const navigate = useNavigate();
   // Primer arranque: se muestra la bienvenida antes que nada.
   if (!onboardingVisto(obtenerStorage())) return <Navigate to="/bienvenida" replace />;
-  return <InicioPage perfil={perfil} completo={completo} onEditarPerfil={() => navigate('/perfil')} convocatoria={convocatoria} />;
-}
-
-function Perfil() {
-  const { perfil, guardar, restablecer, almacenamientoDisponible } = usePerfilCtx();
-  const navigate = useNavigate();
-  return <PerfilPage perfil={perfil} onGuardar={guardar} onRestablecer={restablecer} almacenamientoDisponible={almacenamientoDisponible} onGuardado={() => navigate('/')} />;
+  return <PlazasPage />;
 }
 
 export default function App() {
@@ -30,9 +21,10 @@ export default function App() {
       <Route path="bienvenida" element={<BienvenidaPage />} />
       <Route element={<Layout />}>
         <Route index element={<Inicio />} />
-        <Route path="perfil" element={<Perfil />} />
         <Route path="favoritos" element={<FavoritosPage />} />
-        <Route path="historico" element={<HistoricoPage />} />
+        <Route path="perfil" element={<PerfilPage />} />
+        <Route path="mas" element={<MasPage />} />
+        <Route path="historico" element={<Navigate to="/mas" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

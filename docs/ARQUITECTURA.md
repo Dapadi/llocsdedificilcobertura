@@ -34,6 +34,9 @@ Conselleria (PDF) ──► scripts/ (Python)  ──► public/data/*.json ─�
 - Clases de componentes reutilizables: `.card`, `.chip`, `.btn-primary`, `.btn-secondary`, `.input`.
 - Animaciones de entrada con `prefers-reduced-motion` respetado; objetivos táctiles de al menos 44 px; campos a 16 px para evitar el zoom de iOS.
 - La bienvenida (`/bienvenida`) es un asistente de 4 pasos a pantalla completa que deja el perfil guardado.
+- **Estilo iOS**: tipografía del sistema (SF Pro en iPhone), títulos grandes que se pliegan al hacer scroll, listas agrupadas, interruptores, selector segmentado, hojas inferiores, barra de pestañas translúcida y botones de 52 px. Componentes en `src/ui/`.
+- **Lenguaje sencillo**: textos cortos, una acción principal por pantalla, avisos con salida clara y estados vacíos guiados. Los textos oficiales en MAYÚSCULAS se muestran en minúsculas (`src/lib/texto.ts`) sin alterar el dato guardado.
+- **Navegación**: Plazas · Favoritos · Mi perfil · Más. El perfil se guarda al instante (como Ajustes de iOS); los favoritos se guardan en el dispositivo.
 
 ## Calidad
 
@@ -47,7 +50,8 @@ Conselleria (PDF) ──► scripts/ (Python)  ──► public/data/*.json ─�
 | A. Base PWA | Rutas, instalación, offline, avisos, CI | ✅ este PR |
 | B. Producto | Motor de compatibilidad (titulación, bolsas, idiomas), distancias por carretera, adjudicaciones | ⏳ |
 | C. Experiencia | Asistente de bienvenida, sistema de diseño con modo oscuro, animaciones | ✅ este PR |
-| C2. Experiencia | Favoritos, exportar, esqueletos de carga, conmutador manual de tema | ⏳ |
+| C2. Experiencia | Favoritos, esqueletos de carga, hojas de detalle, estilo iOS | ✅ este PR |
+| C3. Experiencia | Exportar a Excel, conmutador manual de tema, pulir con usuarios reales | ⏳ |
 | D. Notificaciones | Aviso de listado nuevo (push). Es lo que da valor nativo ante Apple (guía 4.2) | ⏳ |
 | E. Capacitor | Proyectos iOS/Android, iconos y *splash*, compilación en la nube | ⏳ |
 | F. Tiendas | Cuentas (Apple 99 $/año, Google 25 $), política de privacidad, fichas, revisión | ⏳ |
