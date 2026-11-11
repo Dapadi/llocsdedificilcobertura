@@ -2,17 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tokens de diseño (RGB para admitir opacidad). Inspirados en los colores de sistema de iOS. */
+:root {
+  color-scheme: light dark;
+  --canvas: 242 242 247;
+  --surface: 255 255 255;
+  --ink: 28 34 52;
+  --muted: 92 100 120;
+  --subtle: 128 134 148;
+  --line: 229 229 234;
+  --line-strong: 209 209 214;
+  --brand: 31 42 68;
+  --brand-ink: 255 255 255;
+  --link: 14 124 116;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: 0 0 0;
+    --surface: 28 28 30;
+    --ink: 245 245 247;
+    --muted: 174 174 178;
+    --subtle: 142 142 147;
+    --line: 56 56 58;
+    --line-strong: 72 72 74;
+    --brand: 255 213 79;
+    --brand-ink: 28 34 52;
+    --link: 70 214 200;
+  }
+}
+
 @layer base {
-  body { @apply bg-slate-50 text-dccv-navy antialiased; }
-  :focus-visible { @apply outline-none ring-2 ring-dccv-teal ring-offset-2; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { @apply bg-canvas font-sans text-[17px] leading-snug text-ink antialiased; overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
+  :focus-visible { @apply outline-none ring-2 ring-dccv-teal ring-offset-2 ring-offset-canvas; }
+  button { @apply select-none; }
 }
 
 @layer components {
-  .card { @apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm; }
-  .label { @apply mb-1 block text-sm font-medium text-dccv-navy; }
-  .input { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-dccv-navy placeholder:text-slate-400 focus:border-dccv-teal; }
-  .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-lg bg-dccv-navy px-4 py-2 text-sm font-semibold text-white hover:bg-dccv-navy/90 disabled:cursor-not-allowed disabled:opacity-50; }
-  .btn-secondary { @apply inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-dccv-navy hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50; }
-  .hint { @apply mt-1 text-xs text-slate-500; }
-  .error-text { @apply mt-1 text-xs font-medium text-red-700; }
+  /* ── Tarjetas y listas agrupadas ── */
+  .card { @apply rounded-ios border border-line/60 bg-surface p-5 shadow-sm; }
+  .group-list { @apply divide-y divide-line overflow-hidden rounded-ios bg-surface; }
+  .row { @apply flex min-h-[52px] w-full items-center justify-between gap-3 px-4 py-3 text-left; }
+  button.row, a.row { @apply transition-colors active:bg-line/60; }
+  .section-title { @apply mb-2 px-4 text-[13px] font-semibold uppercase tracking-wide text-subtle; }
+  .section-foot { @apply mt-2 px-4 text-[13px] leading-snug text-subtle; }
+
+  /* ── Botones ── */
+  .btn-primary { @apply inline-flex min-h-[52px] items-center justify-center gap-2 rounded-ios-btn bg-brand px-5 py-3 text-[17px] font-semibold text-brand-ink transition duration-150 active:scale-[0.97] active:opacity-90 disabled:cursor-not-allowed disabled:opacity-40; }
+  .btn-secondary { @apply inline-flex min-h-[52px] items-center justify-center gap-2 rounded-ios-btn bg-ink/[0.07] px-5 py-3 text-[17px] font-semibold text-ink transition duration-150 active:scale-[0.97] active:bg-ink/10 disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-plain { @apply inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-3 text-[17px] font-medium text-link transition active:opacity-60 disabled:opacity-40; }
+  .btn-destructive { @apply inline-flex min-h-[52px] w-full items-center justify-center rounded-ios-btn bg-surface px-5 text-[17px] font-semibold text-red-600 transition active:bg-line/60; }
+  .btn-icon { @apply inline-flex h-11 w-11 items-center justify-center rounded-full text-link transition active:bg-ink/10; }
+
+  /* ── Formularios ── */
+  .label { @apply mb-1 block text-[15px] font-medium text-ink; }
+  .input { @apply min-h-[44px] w-full rounded-xl border border-line-strong bg-surface px-3 py-2 text-[17px] text-ink placeholder:text-subtle focus:border-dccv-teal; }
+  .input-inline { @apply min-w-0 flex-1 bg-transparent text-right text-[17px] text-ink placeholder:text-subtle focus:outline-none; }
+  .hint { @apply mt-1 text-[13px] text-subtle; }
+  .error-text { @apply mt-1 text-[13px] font-medium text-red-600; }
+
+  /* ── Selección (chips) ── */
+  .chip { @apply inline-flex min-h-[44px] items-center gap-2 rounded-full border border-line-strong bg-surface px-4 py-2 text-[15px] font-medium text-ink transition active:scale-[0.97]; }
+  .chip[aria-pressed='true'], .chip[aria-checked='true'] { @apply border-dccv-teal bg-dccv-teal/15 ring-1 ring-dccv-teal; }
+
+  /* ── Insignias ── */
+  .badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-semibold; }
+}
+
+/* ── Animaciones (se desactivan con «reducir movimiento») ── */
+@keyframes dccv-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes dccv-in-left { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes dccv-drop { 0% { opacity: 0; transform: translateY(-60px) scale(0.9); } 60% { opacity: 1; transform: translateY(8px); } 80% { transform: translateY(-4px); } 100% { transform: none; } }
+@keyframes dccv-pulse { 0% { transform: scale(0.6); opacity: 0.55; } 100% { transform: scale(1.6); opacity: 0; } }
+@keyframes dccv-check { to { stroke-dashoffset: 0; } }
+@keyframes dccv-sheet { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes dccv-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dccv-shimmer { 100% { transform: translateX(100%); } }
+.anim-in { animation: dccv-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-step { animation: dccv-in-left 320ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-drop { animation: dccv-drop 900ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-pulse { animation: dccv-pulse 2.4s ease-out infinite; }
+.anim-check { stroke-dasharray: 48; stroke-dashoffset: 48; animation: dccv-check 600ms 250ms ease-out forwards; }
+.anim-sheet { animation: dccv-sheet 380ms cubic-bezier(0.32, 0.72, 0, 1) both; }
+.anim-fade { animation: dccv-fade 250ms ease-out both; }
+.skeleton { position: relative; overflow: hidden; @apply rounded-ios bg-line/70; }
+.skeleton::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgb(var(--surface) / 0.6), transparent); animation: dccv-shimmer 1.4s infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .anim-in, .anim-step, .anim-drop, .anim-pulse, .anim-check, .anim-sheet, .anim-fade { animation: none; opacity: 1; stroke-dashoffset: 0; transform: none; }
+  .skeleton::after { animation: none; }
 }

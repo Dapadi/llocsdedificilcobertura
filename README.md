@@ -25,6 +25,8 @@ Fuente oficial: <https://ceice.gva.es/va/web/rrhh-educacion/convocatoria-y-petic
 Mientras una fase no esté implementada, la interfaz lo indica y **no muestra datos simulados**.
 Lo que falta para cada fase (credenciales, servicios, catálogos oficiales) está en [`docs/PENDIENTES.md`](docs/PENDIENTES.md).
 
+Arquitectura y hoja de ruta hacia las tiendas: [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md).
+
 ## Cómo se actualizan los datos
 
 Cada jueves la Conselleria publica el PDF «Llocs provisionals oferits» (`AAMMDD_pue_prov.pdf`). El flujo
