@@ -8,3 +8,6 @@ dist
 coverage
 .vite
 *.tsbuildinfo
+__pycache__/
+.pytest_cache/
+*.pyc

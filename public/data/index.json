@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "convocatorias": [
+    {
+      "id": "20261105_261106_pue_prov",
+      "archivo_datos": "convocatorias/20261105_261106_pue_prov.json",
+      "nombre_archivo": "261106_pue_prov.pdf",
+      "url_documento": "https://ceice.gva.es/documents/162909733/416898822/261106_pue_prov.pdf",
+      "sha256": "88f967696388413f6801a99b724cf9bed39bfd8cc897bb8f54e79bedfb9ea613",
+      "estado": "provisional",
+      "fecha_listado": "2026-11-05",
+      "fecha_nombre_archivo": "2026-11-06",
+      "descargado_en": "2026-11-11T20:30:52Z",
+      "num_puestos": 58,
+      "num_revision": 0,
+      "cambios": null
+    }
+  ],
+  "ultima": "20261105_261106_pue_prov",
+  "actualizado_en": "2026-11-11T20:30:52Z"
+}
