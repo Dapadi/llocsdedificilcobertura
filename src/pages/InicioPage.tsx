@@ -17,7 +17,7 @@ interface Props {
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (
     <div>
-      <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{etiqueta}</dt>
+      <dt className="text-xs font-semibold uppercase tracking-wide text-subtle">{etiqueta}</dt>
       <dd className="mt-0.5 text-sm font-medium">{valor || '—'}</dd>
     </div>
   );
@@ -25,10 +25,10 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
 
 function Cifra({ etiqueta, valor, nota }: { etiqueta: string; valor: string; nota?: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <p className={`text-2xl font-bold ${valor === '—' ? 'text-slate-400' : ''}`}>{valor}</p>
-      <p className="mt-1 text-xs text-slate-600">{etiqueta}</p>
-      {nota && <p className="mt-1 text-[11px] text-slate-500">{nota}</p>}
+    <div className="rounded-lg border border-line bg-surface p-4">
+      <p className={`text-2xl font-bold ${valor === '—' ? 'text-subtle' : ''}`}>{valor}</p>
+      <p className="mt-1 text-xs text-muted">{etiqueta}</p>
+      {nota && <p className="mt-1 text-[11px] text-subtle">{nota}</p>}
     </div>
   );
 }
@@ -64,7 +64,7 @@ export function InicioPage({ perfil, completo, onEditarPerfil, convocatoria: cv 
             <Dato etiqueta="Valenciano" valor={perfil.valenciano === 'sin-acreditar' ? 'Sin acreditar' : perfil.valenciano} />
           </dl>
         ) : (
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted">
             Configura tu perfil una sola vez (se guarda solo en este dispositivo) para que DCCV pueda filtrar las
             plazas según tu situación.
           </p>
@@ -130,7 +130,7 @@ export function InicioPage({ perfil, completo, onEditarPerfil, convocatoria: cv 
         {conv ? (
           <PlazasLista convocatoria={conv} perfil={perfil} perfilCompleto={completo} />
         ) : (
-          <p className="card text-sm text-slate-600">Cuando haya una convocatoria procesada, aquí aparecerán las plazas.</p>
+          <p className="card text-sm text-muted">Cuando haya una convocatoria procesada, aquí aparecerán las plazas.</p>
         )}
       </section>
     </div>

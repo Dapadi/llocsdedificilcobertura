@@ -26,9 +26,10 @@ function Perfil() {
 export default function App() {
   return (
     <Routes>
+      {/* La bienvenida es una experiencia a pantalla completa, fuera del marco de la app */}
+      <Route path="bienvenida" element={<BienvenidaPage />} />
       <Route element={<Layout />}>
         <Route index element={<Inicio />} />
-        <Route path="bienvenida" element={<BienvenidaPage />} />
         <Route path="perfil" element={<Perfil />} />
         <Route path="favoritos" element={<FavoritosPage />} />
         <Route path="historico" element={<HistoricoPage />} />

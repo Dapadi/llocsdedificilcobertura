@@ -5,9 +5,9 @@ import { ETIQUETA_TIPO, type Convocatoria, type Puesto } from '../lib/convocator
 import type { PerfilUsuario } from '../types';
 
 const ESTADO: Record<EstadoCompatibilidad, { texto: string; clase: string }> = {
-  compatible: { texto: 'Compatible', clase: 'bg-dccv-teal/20 text-dccv-navy' },
-  revision: { texto: 'Revisión necesaria', clase: 'bg-dccv-yellow/50 text-dccv-navy' },
-  'no-compatible': { texto: 'No compatible', clase: 'bg-slate-200 text-slate-700' },
+  compatible: { texto: 'Compatible', clase: 'bg-dccv-teal/20 text-ink' },
+  revision: { texto: 'Revisión necesaria', clase: 'bg-dccv-yellow/50 text-ink' },
+  'no-compatible': { texto: 'No compatible', clase: 'bg-line text-muted' },
 };
 
 interface Fila {
@@ -18,7 +18,7 @@ interface Fila {
 function Preferencia({ ok, etiqueta }: { ok: boolean | null; etiqueta: string }) {
   if (ok === null) return null;
   return (
-    <span className={`rounded px-1.5 py-0.5 text-xs ${ok ? 'bg-dccv-teal/15' : 'bg-slate-100 text-slate-600'}`}>
+    <span className={`rounded px-1.5 py-0.5 text-xs ${ok ? 'bg-dccv-teal/15' : 'bg-line/60 text-muted'}`}>
       {etiqueta}: {ok ? 'encaja con tu preferencia' : 'no es lo que prefieres'}
     </span>
   );
@@ -32,7 +32,7 @@ function Tarjeta({ fila, convocatoria }: { fila: Fila; convocatoria: Convocatori
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h3 className="font-bold">{p.centro ?? 'Centro no identificado'}</h3>
-          <p className="flex items-center gap-1 text-sm text-slate-600">
+          <p className="flex items-center gap-1 text-sm text-muted">
             <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
             {p.municipio ?? '—'} · {p.provincia ?? '—'}
           </p>
@@ -41,14 +41,14 @@ function Tarjeta({ fila, convocatoria }: { fila: Fila; convocatoria: Convocatori
       </div>
 
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
-        <div><dt className="text-xs text-slate-500">Especialidad</dt><dd className="font-medium">{p.especialidad_codigo} · {p.especialidad_nombre}</dd></div>
-        <div><dt className="text-xs text-slate-500">Tipo (según listado)</dt><dd className="font-medium">{p.tipo_original ?? '—'}{p.tipo && ETIQUETA_TIPO[p.tipo] !== p.tipo_original ? ` · ${ETIQUETA_TIPO[p.tipo]}` : ''}</dd></div>
-        <div><dt className="text-xs text-slate-500">Horas</dt><dd className="font-medium">{p.horas_original ?? '—'}</dd></div>
-        <div><dt className="text-xs text-slate-500">Itinerante (según listado)</dt><dd className="font-medium">{p.itinerante_original ?? '—'}</dd></div>
-        <div><dt className="text-xs text-slate-500">Distancia por carretera</dt><dd className="font-medium text-slate-500">No disponible</dd></div>
-        {p.requisito && <div><dt className="text-xs text-slate-500">Requisito (según listado)</dt><dd className="font-medium">{p.requisito}</dd></div>}
-        {p.composicion && <div><dt className="text-xs text-slate-500">Composición</dt><dd className="font-medium">{p.composicion}</dd></div>}
-        {p.observaciones && <div className="col-span-2"><dt className="text-xs text-slate-500">Observaciones</dt><dd className="font-medium">{p.observaciones}</dd></div>}
+        <div><dt className="text-xs text-subtle">Especialidad</dt><dd className="font-medium">{p.especialidad_codigo} · {p.especialidad_nombre}</dd></div>
+        <div><dt className="text-xs text-subtle">Tipo (según listado)</dt><dd className="font-medium">{p.tipo_original ?? '—'}{p.tipo && ETIQUETA_TIPO[p.tipo] !== p.tipo_original ? ` · ${ETIQUETA_TIPO[p.tipo]}` : ''}</dd></div>
+        <div><dt className="text-xs text-subtle">Horas</dt><dd className="font-medium">{p.horas_original ?? '—'}</dd></div>
+        <div><dt className="text-xs text-subtle">Itinerante (según listado)</dt><dd className="font-medium">{p.itinerante_original ?? '—'}</dd></div>
+        <div><dt className="text-xs text-subtle">Distancia por carretera</dt><dd className="font-medium text-subtle">No disponible</dd></div>
+        {p.requisito && <div><dt className="text-xs text-subtle">Requisito (según listado)</dt><dd className="font-medium">{p.requisito}</dd></div>}
+        {p.composicion && <div><dt className="text-xs text-subtle">Composición</dt><dd className="font-medium">{p.composicion}</dd></div>}
+        {p.observaciones && <div className="col-span-2"><dt className="text-xs text-subtle">Observaciones</dt><dd className="font-medium">{p.observaciones}</dd></div>}
       </dl>
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -56,13 +56,13 @@ function Tarjeta({ fila, convocatoria }: { fila: Fila; convocatoria: Convocatori
         <Preferencia ok={ev.preferencias.itinerancia} etiqueta="Itinerancia" />
       </div>
 
-      <ul className="mt-3 list-disc space-y-0.5 pl-5 text-xs text-slate-600">
+      <ul className="mt-3 list-disc space-y-0.5 pl-5 text-xs text-muted">
         {ev.motivos.map((m) => <li key={m}>{m}</li>)}
       </ul>
 
-      <p className="mt-3 flex flex-wrap items-center gap-x-4 text-xs text-slate-500">
+      <p className="mt-3 flex flex-wrap items-center gap-x-4 text-xs text-subtle">
         <span>Puesto {p.id} · {convocatoria.documento.nombre_archivo}, página {p.pagina}</span>
-        <a className="inline-flex items-center gap-1 font-semibold text-dccv-navy underline" href={`${convocatoria.documento.url}#page=${p.pagina}`} target="_blank" rel="noopener noreferrer">
+        <a className="inline-flex items-center gap-1 font-semibold text-ink underline" href={`${convocatoria.documento.url}#page=${p.pagina}`} target="_blank" rel="noopener noreferrer">
           Documento oficial <ExternalLink className="h-3 w-3" aria-hidden="true" />
         </a>
       </p>
@@ -141,13 +141,13 @@ export function PlazasLista({ convocatoria, perfil, perfilCompleto }: Props) {
         )}
       </form>
 
-      <p className="mb-3 text-sm text-slate-600" role="status">
+      <p className="mb-3 text-sm text-muted" role="status">
         {visibles.length} de {filas.length} plazas de Maestros.
         {!perfilCompleto && ' Configura tu perfil para filtrar por tus especialidades.'}
       </p>
 
       {visibles.length === 0 ? (
-        <p className="card text-sm text-slate-600">Ninguna plaza coincide con los filtros actuales.</p>
+        <p className="card text-sm text-muted">Ninguna plaza coincide con los filtros actuales.</p>
       ) : (
         <ul className="space-y-3">
           {visibles.map((f) => <Tarjeta key={f.puesto.id} fila={f} convocatoria={convocatoria} />)}

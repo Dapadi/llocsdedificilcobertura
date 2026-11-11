@@ -28,6 +28,13 @@ Conselleria (PDF) ──► scripts/ (Python)  ──► public/data/*.json ─�
 - **Enrutado**: React Router con reescritura SPA en `vercel.json`.
 - **Cabeceras de seguridad** básicas y `sw.js` sin caché.
 
+## Sistema de diseño
+
+- Tokens semánticos (`canvas`, `surface`, `ink`, `muted`, `line`, `brand`…) definidos como variables CSS en `src/index.css`, con modo oscuro automático. Los componentes no usan colores fijos.
+- Clases de componentes reutilizables: `.card`, `.chip`, `.btn-primary`, `.btn-secondary`, `.input`.
+- Animaciones de entrada con `prefers-reduced-motion` respetado; objetivos táctiles de al menos 44 px; campos a 16 px para evitar el zoom de iOS.
+- La bienvenida (`/bienvenida`) es un asistente de 4 pasos a pantalla completa que deja el perfil guardado.
+
 ## Calidad
 
 - `npm run typecheck`, `npm test` (Vitest: lógica y navegación) y `pytest` (extractor) se ejecutan en cada PR (`.github/workflows/ci.yml`).
@@ -39,7 +46,8 @@ Conselleria (PDF) ──► scripts/ (Python)  ──► public/data/*.json ─�
 |-------|-----------|--------|
 | A. Base PWA | Rutas, instalación, offline, avisos, CI | ✅ este PR |
 | B. Producto | Motor de compatibilidad (titulación, bolsas, idiomas), distancias por carretera, adjudicaciones | ⏳ |
-| C. Experiencia | Asistente de bienvenida completo, modo oscuro, animaciones, favoritos, exportar | ⏳ |
+| C. Experiencia | Asistente de bienvenida, sistema de diseño con modo oscuro, animaciones | ✅ este PR |
+| C2. Experiencia | Favoritos, exportar, esqueletos de carga, conmutador manual de tema | ⏳ |
 | D. Notificaciones | Aviso de listado nuevo (push). Es lo que da valor nativo ante Apple (guía 4.2) | ⏳ |
 | E. Capacitor | Proyectos iOS/Android, iconos y *splash*, compilación en la nube | ⏳ |
 | F. Tiendas | Cuentas (Apple 99 $/año, Google 25 $), política de privacidad, fichas, revisión | ⏳ |
@@ -49,4 +57,4 @@ Conselleria (PDF) ──► scripts/ (Python)  ──► public/data/*.json ─�
 1. **Nombre y aviso legal**: DCCV no es oficial; las tiendas son estrictas con apps que parecen de un organismo público.
 2. **Notificaciones push**: requieren un servicio de envío (p. ej. FCM/APNs) y un modo de guardar suscripciones sin datos personales.
 3. **Cuentas de desarrollador** y acceso a un Mac (o compilación en la nube) para iOS.
-4. **Modo oscuro**: requiere revisar todos los colores del sistema de diseño (hoy el diseño es claro).
+4. **Tema manual**: hoy el modo oscuro sigue al sistema; falta decidir si se ofrece un conmutador manual.

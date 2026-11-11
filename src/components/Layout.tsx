@@ -44,19 +44,19 @@ export function Layout() {
         <Outlet />
       </main>
 
-      <footer className="hidden border-t border-slate-200 bg-white md:block">
-        <p className="mx-auto max-w-5xl px-4 py-4 text-xs text-slate-500">
+      <footer className="hidden border-t border-line bg-surface md:block">
+        <p className="mx-auto max-w-5xl px-4 py-4 text-xs text-subtle">
           DCCV no es una aplicación oficial de la Generalitat Valenciana. La convocatoria oficial es siempre la fuente de
           referencia y prevalece sobre cualquier interpretación de esta aplicación. No introduzcas DNI ni credenciales de la
           Generalitat: DCCV no las necesita.
         </p>
       </footer>
 
-      <nav aria-label="Principal (móvil)" className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden">
+      <nav aria-label="Principal (móvil)" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
         <ul className="mx-auto grid max-w-md grid-cols-4">
           {ENLACES.map(({ to, etiqueta, icono: Icono, end }) => (
             <li key={to}>
-              <NavLink to={to} end={end} className={({ isActive }) => `flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${isActive ? 'text-dccv-navy' : 'text-slate-500'}`}>
+              <NavLink to={to} end={end} className={({ isActive }) => `flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${isActive ? 'text-ink' : 'text-subtle'}`}>
                 {({ isActive }) => (
                   <>
                     <Icono className={`h-6 w-6 ${isActive ? 'stroke-[2.5]' : ''}`} aria-hidden="true" />

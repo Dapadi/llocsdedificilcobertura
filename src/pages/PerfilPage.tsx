@@ -144,7 +144,7 @@ export function PerfilPage({ perfil, almacenamientoDisponible, onGuardar, onRest
     <form onSubmit={enviar} noValidate className="space-y-6" aria-labelledby={`${id}-t`}>
       <div>
         <h1 id={`${id}-t`} className="text-xl font-bold">Mi perfil docente</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-muted">
           Los datos se guardan únicamente en este dispositivo (localStorage). No se envían a ningún servidor.
         </p>
         {!almacenamientoDisponible && (
@@ -196,9 +196,9 @@ export function PerfilPage({ perfil, almacenamientoDisponible, onGuardar, onRest
         {form.especialidades.length > 0 && (
           <ul className="flex flex-wrap gap-2" aria-label="Especialidades seleccionadas">
             {form.especialidades.map((c) => (
-              <li key={c} className="flex items-center gap-1 rounded-full bg-dccv-navy px-3 py-1 text-xs font-semibold text-white">
+              <li key={c} className="flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-brand-ink">
                 {c}{nombresProvisionales.has(c) ? ` · ${nombresProvisionales.get(c)}` : ''}
-                <button type="button" onClick={() => alternarEspecialidad(c)} aria-label={`Quitar especialidad ${c}`} className="rounded-full p-0.5 hover:bg-white/20"><X className="h-3 w-3" aria-hidden="true" /></button>
+                <button type="button" onClick={() => alternarEspecialidad(c)} aria-label={`Quitar especialidad ${c}`} className="rounded-full p-0.5 hover:bg-surface/20"><X className="h-3 w-3" aria-hidden="true" /></button>
               </li>
             ))}
           </ul>
@@ -252,7 +252,7 @@ export function PerfilPage({ perfil, almacenamientoDisponible, onGuardar, onRest
         </Grupo>
       </Seccion>
 
-      <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center gap-3 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur">
+      <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center gap-3 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur">
         <button type="submit" className="btn-primary"><Save className="h-4 w-4" aria-hidden="true" />Guardar perfil</button>
         <button type="button" className="btn-secondary" onClick={() => { if (window.confirm('¿Borrar el perfil guardado en este dispositivo?')) { onRestablecer(); setForm(structuredClone(PERFIL_POR_DEFECTO)); setErrores({}); setAviso(''); } }}>
           <Trash2 className="h-4 w-4" aria-hidden="true" />Borrar perfil
