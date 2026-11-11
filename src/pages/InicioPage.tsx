@@ -1,4 +1,8 @@
-import { AlertTriangle, ExternalLink, RefreshCw, UserRound } from 'lucide-react';
+import { AlertTriangle, ExternalLink, Loader2, RefreshCw, UserRound } from 'lucide-react';
+import { PlazasLista } from '../components/PlazasLista';
+import type { useConvocatoria } from '../hooks/useConvocatoria';
+import { CUERPO_MAESTROS, DIAS_MAX_ANTIGUEDAD, diasDesde, formatearFecha } from '../lib/convocatorias';
+import { evaluarPuesto } from '../lib/compatibilidad';
 import type { PerfilUsuario } from '../types';
 
 export const URL_CONVOCATORIAS = 'https://ceice.gva.es/va/web/rrhh-educacion/convocatoria-y-peticion-telematica6';
@@ -7,6 +11,7 @@ interface Props {
   perfil: PerfilUsuario;
   completo: boolean;
   onEditarPerfil: () => void;
+  convocatoria: ReturnType<typeof useConvocatoria>;
 }
 
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
@@ -18,16 +23,29 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   );
 }
 
-function Cifra({ etiqueta }: { etiqueta: string }) {
+function Cifra({ etiqueta, valor, nota }: { etiqueta: string; valor: string; nota?: string }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <p className="text-2xl font-bold text-slate-400" aria-label="Sin datos">—</p>
+      <p className={`text-2xl font-bold ${valor === '—' ? 'text-slate-400' : ''}`}>{valor}</p>
       <p className="mt-1 text-xs text-slate-600">{etiqueta}</p>
+      {nota && <p className="mt-1 text-[11px] text-slate-500">{nota}</p>}
     </div>
   );
 }
 
-export function InicioPage({ perfil, completo, onEditarPerfil }: Props) {
+function formatearMomento(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+export function InicioPage({ perfil, completo, onEditarPerfil, convocatoria: cv }: Props) {
+  const conv = cv.datos?.convocatoria ?? null;
+  const estado = cv.datos?.estado ?? null;
+  const maestros = conv ? conv.puestos.filter((p) => p.cuerpo === CUERPO_MAESTROS) : [];
+  const coinciden = completo ? maestros.filter((p) => evaluarPuesto(p, perfil).estado !== 'no-compatible').length : null;
+  const antiguedad = conv?.documento.fecha_listado ? diasDesde(conv.documento.fecha_listado) : null;
+  const posiblementeAntiguo = antiguedad !== null && antiguedad > DIAS_MAX_ANTIGUEDAD;
   return (
     <div className="space-y-6">
       <section aria-labelledby="t-perfil" className="card">
@@ -57,47 +75,63 @@ export function InicioPage({ perfil, completo, onEditarPerfil }: Props) {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 id="t-convocatoria" className="text-lg font-bold">Última convocatoria</h2>
           <div className="flex flex-wrap gap-2">
-            <button type="button" className="btn-secondary" disabled title="Disponible cuando se implemente la Fase 3">
-              <RefreshCw className="h-4 w-4" aria-hidden="true" />
-              Actualizar datos
+            <button type="button" className="btn-secondary" onClick={() => void cv.recargar()} disabled={cv.cargando} title="Vuelve a leer los datos publicados. Los listados nuevos se descargan automáticamente de la Conselleria cada semana.">
+              {cv.cargando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <RefreshCw className="h-4 w-4" aria-hidden="true" />}
+              Recargar datos
             </button>
-            <a className="btn-secondary" href={URL_CONVOCATORIAS} target="_blank" rel="noopener noreferrer">
+            <a className="btn-secondary" href={conv?.documento.url_pagina ?? URL_CONVOCATORIAS} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
               Página oficial
             </a>
           </div>
         </div>
 
-        <div role="status" className="mb-4 flex gap-3 rounded-lg border border-dccv-yellow bg-dccv-yellow/20 p-3 text-sm">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          <p>
-            <strong>Sin datos reales todavía.</strong> La conexión con la Conselleria y la extracción de listados aún
-            no están implementadas (Fases 3 y 4). No se muestra ninguna convocatoria ni plaza de ejemplo para evitar
-            confusiones.
-          </p>
-        </div>
+        {cv.error && (
+          <div role="alert" className="mb-4 flex gap-3 rounded-lg border border-red-300 bg-red-50 p-3 text-sm">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <p><strong>No se han podido cargar los datos.</strong> {cv.error}{conv ? ' Se muestran los últimos datos cargados.' : ''}</p>
+          </div>
+        )}
+        {!cv.error && !cv.cargando && !conv && (
+          <div role="status" className="mb-4 flex gap-3 rounded-lg border border-dccv-yellow bg-dccv-yellow/20 p-3 text-sm">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <p><strong>Todavía no hay ninguna convocatoria procesada.</strong> Se descargará automáticamente cuando se ejecute la primera actualización.</p>
+          </div>
+        )}
+        {estado?.resultado === 'error' && (
+          <div role="alert" className="mb-4 flex gap-3 rounded-lg border border-dccv-yellow bg-dccv-yellow/20 p-3 text-sm">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <p><strong>La última comprobación automática falló</strong> ({formatearMomento(estado.ultimo_intento)}): {estado.mensaje}. Se conserva el último listado válido, que puede no ser el más reciente.</p>
+          </div>
+        )}
+        {posiblementeAntiguo && (
+          <div role="status" className="mb-4 flex gap-3 rounded-lg border border-dccv-yellow bg-dccv-yellow/20 p-3 text-sm">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <p><strong>Este listado tiene {antiguedad} días.</strong> Puede haberse publicado uno más reciente: consulta la página oficial.</p>
+          </div>
+        )}
 
         <dl className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Dato etiqueta="Nombre" valor="" />
-          <Dato etiqueta="Fecha de publicación" valor="" />
-          <Dato etiqueta="Estado del documento" valor="" />
+          <Dato etiqueta="Documento" valor={conv?.documento.nombre_archivo ?? ''} />
+          <Dato etiqueta="Fecha del listado" valor={conv ? formatearFecha(conv.documento.fecha_listado) : ''} />
+          <Dato etiqueta="Estado del documento" valor={conv ? (conv.documento.estado === 'provisional' ? 'Provisional (no es adjudicación)' : 'Sin determinar') : ''} />
         </dl>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Cifra etiqueta="Puestos detectados" />
-          <Cifra etiqueta="Compatibles con tu perfil" />
-          <Cifra etiqueta="Pendientes de revisión" />
-          <Cifra etiqueta="Última actualización" />
+          <Cifra etiqueta="Puestos de Maestros" valor={conv ? String(maestros.length) : '—'} nota={conv ? `${conv.puestos.length} en todo el documento` : undefined} />
+          <Cifra etiqueta="Coinciden con tu especialidad" valor={coinciden === null ? '—' : String(coinciden)} nota={completo ? undefined : 'Configura tu perfil'} />
+          <Cifra etiqueta="Compatibles verificados" valor="—" nota="La comprobación de titulación y bolsas llegará con la Fase 5" />
+          <Cifra etiqueta="Datos descargados" valor={formatearMomento(conv?.documento.descargado_en)} />
         </div>
       </section>
 
-      <section aria-labelledby="t-plazas" className="card">
-        <h2 id="t-plazas" className="text-lg font-bold">Plazas compatibles</h2>
-        <p className="mt-2 text-sm text-slate-600">
-          Cuando se procesen los documentos de la convocatoria, aquí aparecerán las plazas con su estado
-          (compatible, no compatible o revisión necesaria), la distancia por carretera y el enlace al documento de
-          origen.
-        </p>
+      <section aria-labelledby="t-plazas">
+        <h2 id="t-plazas" className="mb-3 text-lg font-bold">Plazas</h2>
+        {conv ? (
+          <PlazasLista convocatoria={conv} perfil={perfil} perfilCompleto={completo} />
+        ) : (
+          <p className="card text-sm text-slate-600">Cuando haya una convocatoria procesada, aquí aparecerán las plazas.</p>
+        )}
       </section>
     </div>
   );

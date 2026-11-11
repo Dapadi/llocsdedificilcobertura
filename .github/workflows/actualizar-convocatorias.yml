@@ -1,0 +1,53 @@
+name: Actualizar convocatorias
+
+# La Conselleria publica el listado provisional los jueves. Se comprueba varias veces ese día
+# (por si tarda en aparecer o la web falla) y el viernes por la mañana (correcciones).
+# El proceso es idempotente: si el PDF ya está procesado no cambia nada.
+on:
+  schedule:
+    - cron: '23 7,9,12,15,18 * * 4'
+    - cron: '23 7,11 * * 5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actualizar-convocatorias
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+
+      - run: pip install -r scripts/requirements.txt
+
+      - name: Pruebas del extractor
+        run: python -m pytest scripts/tests -q
+
+      - name: Descargar y procesar el listado
+        run: python scripts/update_convocatorias.py --data-dir public/data
+
+      - name: Publicar datos actualizados
+        if: always()
+        run: |
+          if [ -n "$(git status --porcelain public/data)" ]; then
+            git config user.name "dccv-bot"
+            git config user.email "dccv-bot@users.noreply.github.com"
+            git add public/data
+            git commit -m "Datos: actualización automática de convocatorias"
+            git push
+          else
+            echo "Sin cambios en los datos."
+          fi
