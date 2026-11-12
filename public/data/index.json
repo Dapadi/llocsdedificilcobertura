@@ -14,8 +14,26 @@
       "num_puestos": 58,
       "num_revision": 0,
       "cambios": null
+    },
+    {
+      "id": "20261112_261113_pue_prov",
+      "archivo_datos": "convocatorias/20261112_261113_pue_prov.json",
+      "nombre_archivo": "261113_pue_prov.pdf",
+      "url_documento": "https://ceice.gva.es/documents/162909733/416898822/261113_pue_prov.pdf",
+      "sha256": "f4732ca3fee4cdcfad51fe041dcf861efbb73e601b469d234836491bafb20e57",
+      "estado": "provisional",
+      "fecha_listado": "2026-11-12",
+      "fecha_nombre_archivo": "2026-11-13",
+      "descargado_en": "2026-11-12T16:04:16Z",
+      "num_puestos": 86,
+      "num_revision": 0,
+      "cambios": {
+        "anterior": "20261105_261106_pue_prov",
+        "nuevos": 77,
+        "retirados": 49
+      }
     }
   ],
-  "ultima": "20261105_261106_pue_prov",
-  "actualizado_en": "2026-11-11T20:30:52Z"
+  "ultima": "20261112_261113_pue_prov",
+  "actualizado_en": "2026-11-12T16:04:16Z"
 }
